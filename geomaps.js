@@ -138,9 +138,17 @@ if (Meteor.isClient) {
         Session.set('object', object);
       }
     },
-    // clear template context when form is closed to clear the form
+    // clear template context when form is closed and clear the form
     'hidden.bs.modal #myModal': function(event, template) {
       Session.set('object', null);
+      var nameInput = template.find('input[name=name]');
+      var descriptionInput = template.find('textarea[name=description]');
+      var latInput = template.find('input[name=lat]');
+      var lngInput = template.find('input[name=lng]');
+      nameInput.value = "";
+      descriptionInput.value = "";
+      latInput.value = "";
+      lngInput.value = "";
     },
     // set <select> values when form is shown (it's cleaner to do it here than on the template)
     'shown.bs.modal #myModal': function(event, template) {
