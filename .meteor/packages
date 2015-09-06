@@ -9,3 +9,12 @@ autopublish
 insecure
 kadira:flow-router
 kadira:blaze-layout
+twbs:bootstrap
+useraccounts:bootstrap
+accounts-password
+useraccounts:flow-routing
+jagi:astronomy
+jagi:astronomy-validators
+jquery
+aslagle:reactive-table
+dburles:google-maps

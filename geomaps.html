@@ -3,12 +3,201 @@
 </head>
 
 <body>
-  <h1>Welcome to Meteor!</h1>
-
-  {{> hello}}
 </body>
 
-<template name="hello">
-  <button>Click Me</button>
-  <p>You've pressed the button {{counter}} times.</p>
+<template name="mainLayout">
+	{{> Template.dynamic template=top }}
+	{{> Template.dynamic template=content }}
+	{{> Template.dynamic template=bottom }}
+</template>
+
+<!-- /objects -->
+<template name="objects">
+	<div class="container">
+		<div class="row">
+			<div class="col-md-12 col-xs-12">
+				<h1>Объекты</h1>
+				{{> objectModalForm }}
+				<button type="button" class="btn btn-default btn-primary" data-toggle="modal" data-target="#myModal">
+					<span class="glyphicon glyphicon-plus" aria-hidden="true"></span> Добавить новый объект
+				</button>
+				{{> objectsTable }}
+			</div>
+		</div>
+	</div>
+</template>
+
+<!-- /geoportal -->
+<template name="geoportal">
+	<div class="container">
+		<div class="col-xs-6 col-md-2">
+			<h3><small>Фильтры</small></h3>
+			<div class="checkbox">
+				<label><input type="checkbox" value="institution" checked> Учреждения</label>
+			</div>
+			<div class="checkbox">
+				<label><input type="checkbox" value="nature" checked> Природа</label>
+			</div>
+			<div class="checkbox">
+				<label><input type="checkbox" value="infrastructure" checked> Инфраструктура</label>
+			</div>
+			<div class="checkbox">
+				<label><input type="checkbox" value="transport" checked> Транспорт</label>
+			</div>
+			<div class="checkbox">
+				<label><input type="checkbox" value="human" checked> Человек</label>
+			</div>
+			<div class="checkbox">
+				<label><input type="checkbox" value="territory" checked> Территория</label>
+			</div>
+			<div class="checkbox">
+				<label><input type="checkbox" value="undefined" checked> Неопределённый</label>
+			</div>
+		</div>
+		<div class="col-xs-12 col-md-10">
+			{{> objectModalForm }}
+			<div class="map-container">
+				{{> googleMap name="geoMap" options=mapOptions }}
+			</div>
+		</div>
+	</div>
+</template>
+
+<template name="objectsTable">
+	{{> reactiveTable class="table table-bordered table-hover" settings=settings}}
+</template>
+
+<template name="objectEditButton">
+	<button type="button" class="btn btn-sm btn-success">
+		<span class="glyphicon glyphicon-pencil" aria-hidden="true"></span> Редактировать
+		</button>
+</template>
+
+<template name="objectModalForm">
+	{{#with object}}
+	<!-- Modal -->
+	<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+		<div class="modal-dialog" role="document">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        			<h4 class="modal-title" id="myModalLabel">Добавить/Редактировать объект</h4>
+				</div>
+				<div class="modal-body">
+					<form id="objectForm">
+						<div class="form-group">
+							{{#if hasValidationError "type"}}
+							<p class="bg-danger">{{getValidationError "type"}}</p>
+							{{/if}}
+							<label for="selectObjectType">Тип объекта</label>
+							<select class="form-control" id="selectObjectType" name="type" value="{{type}}">
+								<option value="institution">Учреждение</option>
+								<option value="transport">Транспорт</option>
+								<option value="nature">Природа</option>
+								<option value="territory">Территория</option>
+								<option value="infrastructure">Инфраструктура</option>
+								<option value="human">Человек</option>
+								<option value="undefined">Неопределённый</option>
+							</select>
+						</div>
+
+						<div class="form-group">
+							{{#if hasValidationError "name"}}
+							<p class="bg-danger">{{getValidationError "name"}}</p>
+							{{/if}}
+							<label for="inputObjectName">Название</label>
+							<input type="text" name="name" id="inputObjectName" placeholder="Название" value="{{name}}">
+						</div>
+
+						<div class="form-group">
+							{{#if hasValidationError "description"}}
+							<p class="bg-danger">{{getValidationError "description"}}</p>
+							{{/if}}
+							<label for="textareaObjectDescription">Описание</label>
+							<textarea name="description" id="textareaObjectDescription" placeholder="Описание" value="{{description}}"></textarea>
+						</div>
+
+						<div class="form-group">
+							{{#if hasValidationError "location.lat"}}
+							<p class="bg-danger">{{getValidationError "location.lat"}}</p>
+							{{/if}}
+							<label for="inputLat">Широта</label>
+							<input type="text" name="lat" id="inputLat" placeholder="Широта" value="{{location.lat}}">
+
+							{{#if hasValidationError "location.lng"}}
+							<p class="bg-danger">{{getValidationError "location.lng"}}</p>
+							{{/if}}
+							<label for="inputLng">Долгота</label>
+							<input type="text" name="lng" id="inputLng" placeholder="Долгота" value="{{location.lng}}">
+						</div>
+
+						<div class="form-group">
+							{{#if hasValidationError "dangerLevel"}}
+							<p class="bg-danger">{{getValidationError "dangerLevel"}}</p>
+							{{/if}}
+							<label for="selectDangerLevel">Уровень опасности</label>
+							<select class="form-control" id="selectDangerLevel" name="dangerLevel" value="{{dangerLevel}}">
+								<option value="0">0</option>
+								<option value="1">1</option>
+								<option value="2">2</option>
+								<option value="3">3</option>
+								<option value="4">4</option>
+								<option value="5">5</option>
+								<option value="6">6</option>
+								<option value="7">7</option>
+								<option value="8">8</option>
+								<option value="9">9</option>
+								<option value="10">10</option>
+							</select>
+						</div>
+						<button type="button" class="btn btn-default" data-dismiss="modal">Отмена</button>
+        				<button type="submit" class="btn btn-primary" id="buttonModalPrimary">Сохранить</button>
+					</form>
+				</div>
+			</div>
+		</div>
+	</div>
+	{{/with}}
+</template>
+
+<template name="topnav">
+	<nav class="navbar navbar-default">
+		<div class="container-fluid">
+			<!-- Brand and toggle get grouped for better mobile display -->
+			<div class="navbar-header">
+				<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+					<span class="sr-only">Toggle navigation</span>
+					<span class="icon-bar"></span>
+					<span class="icon-bar"></span>
+					<span class="icon-bar"></span>
+				</button>
+				<a class="navbar-brand" href="#">GeoMaps</a>
+			</div>
+
+			<!-- Collect the nav links, forms, and other content for toggling -->
+			<div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+				<ul class="nav navbar-nav">
+					<li class="{{ isObjectsActive }}">
+						<a href="/objects">Объекты</a>
+					</li>
+					<li class="{{ isGeoportalActive }}">
+						<a href="/geoportal">Геопортал</a>
+					</li>
+				</ul>
+				<ul class="nav navbar-nav navbar-right">
+					<li><a href="/logout">Выйти</a></li>
+				</ul>
+			</div><!-- /.navbar-collapse -->
+		</div><!-- /.container-fluid -->
+	</nav>
+</template>
+
+<!-- Google Maps InfoWindow content template -->
+<template name="infoWindowContent">
+	<div class="info-window-content">
+		<h4>{{ name }}</h4>
+		<p>{{ description }}</p>
+		<p>Объект типа <u>{{ type }}</u>, расположенный по координатам <u>{{ location.lat }}, {{ location.lng }}</u>.</p>
+		<p>Уровень опасности <u>{{ dangerLevel }}</u></p>
+	</div>
 </template>
