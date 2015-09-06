@@ -127,7 +127,7 @@ if (Meteor.isClient) {
         'location.lng': form.lng.value,
         'dangerLevel': form.dangerLevel.value
       });
-      Session.set('object', object);
+      
       if (object.validateAll()) {
         // save and close form
         object.save();
