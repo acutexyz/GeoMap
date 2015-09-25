@@ -1,4 +1,5 @@
 Objects = new Mongo.Collection('objects');
+Polygons = new Mongo.Collection('polygons');
 
 GeoObject = new Astro.Class({ // unfortunately 'Object' is a reserved word in JS :/
   name: 'GeoObject',
@@ -27,6 +28,27 @@ GeoObject = new Astro.Class({ // unfortunately 'Object' is a reserved word in JS
   }
 });
 
+Polygon = new Astro.Class({
+  name: 'Polygon',
+  collection: Polygons,
+  fields: {
+    'paths': { 
+      type: 'array',
+      default: []
+    },
+    'paths.$': {
+      type: 'object',
+      default: { lat: 0, lng: 0 }
+    },
+    'paths.$.lat': {
+      type: 'number'
+    },
+    'paths.$.lng': {
+      type: 'number'
+    }
+  }
+})
+
 if (Meteor.isClient) {
   
   //
@@ -52,7 +74,7 @@ if (Meteor.isClient) {
   FlowRouter.route('/geoportal', {
     triggersEnter: [function(context, redirect) {
       // load google map only on this route
-      GoogleMaps.load();
+      GoogleMaps.load({libraries: 'drawing'});
     }],
     action: function(_params) {
       BlazeLayout.render("mainLayout", {
@@ -212,6 +234,12 @@ if (Meteor.isClient) {
           disableDoubleClickZoom: true
         }
       }
+    },
+    objectsCounter: function() {
+      return Session.get('objects_count');
+    },
+    polygonsCounter: function() {
+      return Session.get('polygons_count');
     }
   });
 
@@ -227,6 +255,9 @@ if (Meteor.isClient) {
         }
       };
       Session.set('checkedFilters', checkedObjectTypes);
+    },
+    'click #btn-draw': function(e) {
+      Session.set('drawing_mode', true);
     }
   });
 
@@ -235,6 +266,7 @@ if (Meteor.isClient) {
 
     GoogleMaps.ready('geoMap', function(map) {
       var markers = {};
+      var _polygons = {};
 
       // each object type will have its own icon
       var markerIcons = {
@@ -246,6 +278,26 @@ if (Meteor.isClient) {
         territory: '/images/pointer17.png',
         'undefined': '/images/question1.png'
       }
+
+      // drawing manager to draw polygons
+      var drawingManager = new google.maps.drawing.DrawingManager({
+        drawingMode: google.maps.drawing.OverlayType.POLYGON,
+        drawingControl: false
+      });
+
+      drawingManager.addListener('polygoncomplete', function(polygon) {
+        console.log(polygon);
+        var vertices = polygon.getPath();
+        var astroPolygon = new Polygon();
+        for (var i = 0; i < vertices.getLength(); i++) {
+          var xy = vertices.getAt(i);
+          astroPolygon.set('paths.' + i, {});
+          astroPolygon.set('paths.' + i + '.lat', xy.lat());
+          astroPolygon.set('paths.' + i + '.lng', xy.lng());
+        };
+        astroPolygon.save();
+        Session.set('drawing_mode', false);
+      });
       
       // only one infoWindow instance will be used each time, 
       // as it's recommended in the docs
@@ -253,6 +305,9 @@ if (Meteor.isClient) {
 
       // put markers on the map
       initializeMarkers();
+
+      // put polygons on the map
+      initializePolygons();
 
       //
       // This autorun callback will run every time the 'Objects' Collection changes.
@@ -264,6 +319,8 @@ if (Meteor.isClient) {
         var checkedFilters = Session.get('checkedFilters');
         
         var objects = Objects.find().fetch();
+        Session.set('objects_count', objects.length);
+        
         for (var i = objects.length - 1; i >= 0; i--) {
           var object = objects[i];
           var marker = markers[object._id];
@@ -287,6 +344,28 @@ if (Meteor.isClient) {
             marker.setMap(checked ? map.instance : null);
           }
         };
+
+        var dbPolygons = Polygons.find().fetch();
+        Session.set('polygons_count', dbPolygons.length);
+
+        for (var i = dbPolygons.length - 1; i >= 0; i--) {
+          var mapPolygon = _polygons[dbPolygons[i]._id];
+          if (!mapPolygon) {
+            mapPolygon = new google.maps.Polygon({
+              paths: dbPolygons[i].paths,
+              map: map.instance
+            });
+            _polygons[dbPolygons[i]._id] = mapPolygon;
+          }
+        };
+
+        // set polygon drawing mode 
+        var drawing_mode = Session.get('drawing_mode');
+        if (drawing_mode) {
+          drawingManager.setMap(map.instance);
+        } else {
+          drawingManager.setMap(null);
+        }
       });
 
       // on double click on map opens object modal form and 
@@ -362,6 +441,18 @@ if (Meteor.isClient) {
           var marker = addMarkerToMap(objects[i]);
           // save marker
           markers[objects[i]._id] = marker;
+        };
+      }
+
+      function initializePolygons() {
+        var polygons = Polygons.find().fetch();
+        for (var i = polygons.length - 1; i >= 0; i--) {
+          var polygon = new google.maps.Polygon({
+            paths: polygons[i].paths,
+            map: map.instance
+          });
+
+          _polygons[polygons[i]._id] = polygon;
         };
       }
     });

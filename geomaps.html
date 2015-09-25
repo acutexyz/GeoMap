@@ -53,11 +53,17 @@
 			<div class="checkbox">
 				<label><input type="checkbox" value="undefined" checked> Неопределённый</label>
 			</div>
+			<h3><small>Инструменты</small></h3>
+			<button class="btn btn-default" id="btn-draw">Обозначить территорию</button>
 		</div>
 		<div class="col-xs-12 col-md-10">
 			{{> objectModalForm }}
 			<div class="map-container">
 				{{> googleMap name="geoMap" options=mapOptions }}
+			</div>
+			<div class="stats">
+				<div>Обьектов: <span id="objects-counter">{{ objectsCounter }}</span></div>
+				<div>Территорий: <span id="polygons-counter">{{ polygonsCounter }}</span></div>
 			</div>
 		</div>
 	</div>
